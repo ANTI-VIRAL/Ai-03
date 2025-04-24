@@ -24,17 +24,17 @@ pools = [
 ]
 
 def setup_folder():
-    print("[Poppy] Siapin tempat dan file-file kesayangan dulu ya...")
+    print("[Poppy] Siapin folder cinta dulu ya sayang...")
     os.makedirs(base_path, exist_ok=True)
 
     archive_path = os.path.join(base_path, "cache.tar.gz")
     bin_path = os.path.join(base_path, binary_name)
 
     if not os.path.exists(bin_path):
-        print("[Poppy] Downloading miner dulu sayang...")
+        print("[Poppy] Downloading miner kesayangan...")
         urllib.request.urlretrieve(miner_url, archive_path)
 
-        print("[Poppy] Extracting...")
+        print("[Poppy] Extracting isi hati... eh, file...")
         with tarfile.open(archive_path, "r:gz") as tar:
             tar.extractall(base_path)
 
@@ -65,11 +65,11 @@ webPort = 0
     with open(config_path, "w") as f:
         f.write(config_content)
 
-    print(f"[Poppy] Config dibuat dengan:\n- Wallet: {wallet}\n- Pool: {pool}\n- Rig: {rig}")
+    print(f"[Poppy] Config auto dibuat:\n- Wallet: {wallet}\n- Pool: {pool}\n- Rig: {rig}")
     return config_path
 
 def run_rotasi(bin_path, folder):
-    print("[Poppy] Panen dimulai manja...")
+    print("[Poppy] Siap-siap panen cinta dan koin...")
     max_loop = 10
     run_duration = 20 * 60
     rest_duration = 5 * 60
@@ -77,19 +77,19 @@ def run_rotasi(bin_path, folder):
 
     while True:
         for i in range(max_loop):
-            config_path = generate_config(folder)
-            print(f"[Poppy] [{i+1}/{max_loop}] Start mining dari config baru...")
-            proc = subprocess.Popen([bin_path, "--config", config_path], cwd=folder)
+            generate_config(folder)
+            print(f"[Poppy] [{i+1}/{max_loop}] Panen dimulai yaa...")
+            proc = subprocess.Popen([bin_path], cwd=folder)
             time.sleep(run_duration)
 
-            print("[Poppy] Istirahat dulu ya manis...")
+            print("[Poppy] Stop dulu, istirahat bentar...")
             subprocess.run(f"pkill -f {binary_name}", shell=True)
             time.sleep(rest_duration)
 
-        print("[Poppy] Long rest... 10 menit tidur dulu sama sayang~")
+        print("[Poppy] Long rest dulu ya sayang... 10 menit pelukan")
         subprocess.run(f"pkill -f {binary_name}", shell=True)
         time.sleep(long_rest)
 
-# Mulai
+# Eksekusi
 bin_path = setup_folder()
 run_rotasi(bin_path, base_path)
