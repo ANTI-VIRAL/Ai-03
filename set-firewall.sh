@@ -1,30 +1,35 @@
 #!/bin/bash
 
-# PORT VPS RELAY kamu
-RELAY_PORT="11090"
+RELAY_PORT="11002"
 
-# FLUSH tapi jaga koneksi SSH biar gak lost
-sudo iptables -F
-sudo iptables -X
+# Bersihkan rules sebelumnya
+iptables -F
+iptables -X
 
-# Default policy
-sudo iptables -P OUTPUT DROP
-sudo iptables -P INPUT ACCEPT
-sudo iptables -P FORWARD DROP
+# Set default policy
+iptables -P OUTPUT DROP
+iptables -P INPUT ACCEPT
+iptables -P FORWARD DROP
 
-# Allow koneksi SSH (jaga jangan keputus ya sayang)
-sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
-sudo iptables -A OUTPUT -p tcp --sport 22 -j ACCEPT
+# Jaga koneksi SSH
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+iptables -A OUTPUT -p tcp --sport 22 -j ACCEPT
 
-# Allow koneksi keluar ke port relay (destination ALL)
-sudo iptables -A OUTPUT -p tcp --dport $RELAY_PORT -j ACCEPT
+# Izinkan koneksi ke port relay
+iptables -A OUTPUT -p tcp --dport $RELAY_PORT -j ACCEPT
 
-# Allow DNS (kalau pakai domain)
-sudo iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+# Izinkan DNS (domain)
+iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
 
-# Allow localhost
-sudo iptables -A OUTPUT -o lo -j ACCEPT
+# Izinkan localhost
+iptables -A OUTPUT -o lo -j ACCEPT
 
-# (Optional) Simpan rules
-sudo apt-get install iptables-persistent -y
-sudo netfilter-persistent save
+# Cek apakah apt-get tersedia (berarti kemungkinan Ubuntu/Debian)
+if command -v apt-get >/dev/null 2>&1; then
+    echo "[*] Debian/Ubuntu terdeteksi, tapi skip install iptables-persistent"
+else
+    echo "[*] Bukan Debian/Ubuntu, skip bagian iptables-persistent"
+fi
+
+echo "[✓] Firewall rules telah diterapkan (tanpa simpan permanen)"
+exit 0
